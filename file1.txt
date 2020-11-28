@@ -1,3 +1,10 @@
 haha
+<<<<<<< HEAD
 hihi
 yaya
+=======
+WOWOWOOWOWOWOWOWW
+dkfjnvlk
+dfknvldf
+dflkvnld
+>>>>>>> refs/remotes/origin/main
