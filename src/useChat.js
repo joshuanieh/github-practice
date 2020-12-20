@@ -19,7 +19,7 @@ const useChat = () => {
         break
       }
       case 'output': {
-        setMessages(() => [...messages, ...payload])
+        setMessages(() => [...messages, payload])
         break
       }
       case 'status': {
@@ -47,7 +47,6 @@ const useChat = () => {
   const sendMessage = (msg) => {
     // TODO
     sendData(['input', msg])
-
   }
 
   const clearMessages = () => {

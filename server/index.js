@@ -57,7 +57,6 @@ db.once('open', () => {
       switch (task) {
         case 'input': {
           // TODO
-          console.log(payload)
           Message.insertMany(payload)
           sendData(['output', payload])
           break
@@ -65,6 +64,7 @@ db.once('open', () => {
         case 'clear': {
           Message.deleteMany({}, () => {
             sendData(['cleared'])
+
             sendStatus({
               type: 'info',
               msg: 'Message cache cleared.'
