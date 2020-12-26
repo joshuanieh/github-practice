@@ -1,5 +1,9 @@
 require('dotenv-defaults').config()
 
+const { GraphQLServer, PubSub } = require('graphql-yoga')
+const Query = require('./resolvers/Query')
+const Mutation = require('./resolvers/Mutation')
+const Subscription = require('./resolvers/Subscription')
 const http = require('http')
 const express = require('express')
 const mongoose = require('mongoose')
@@ -30,6 +34,21 @@ db.on('error', (error) => {
 db.once('open', () => {
   console.log('MongoDB connected!')
 
+  const pubsub = new PubSub()
+
+  const gql = new GraphQLServer({
+    typeDefs: './server/schema.graphql',
+    resolvers: {
+      Query,
+      Mutation,
+      Subscription,
+    },
+    context: {
+      Message,
+      pubsub
+    }
+  })
+  
   wss.on('connection', ws => {
     const sendData = (data) => {
       ws.send(JSON.stringify(data))
@@ -59,6 +78,10 @@ db.once('open', () => {
           // TODO
           Message.insertMany(payload)
           sendData(['output', payload])
+          sendStatus({
+            type: 'success',
+            msg: 'Message sent.'
+          })
           break
         }
         case 'clear': {
@@ -79,7 +102,11 @@ db.once('open', () => {
     }
   })
 
-  const PORT = process.env.port || 4000
+  const PORT = process.env.port || 2000
+
+  gql.start(4000, () => {
+    console.log(`Listening on http://localhost:4000`)
+  })
 
   server.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`)
