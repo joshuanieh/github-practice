@@ -3,13 +3,13 @@ const Schema = mongoose.Schema
 
 // Creating a schema, sort of like working with an ORM
 const MessageSchema = new Schema({
-	user: {
+	emitter: {
 		type: String,
-		required: [true, 'Name field is required.']
+		required: [true, 'Emitter field is required.']
 	},
-	receiver: {
+	collector: {
 		type: String,
-		required: [true, 'Name field is required.']
+		required: [true, 'Collector field is required']
 	},
 	body: {
 		type: String,
