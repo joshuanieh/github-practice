@@ -1,15 +1,91 @@
 import './App.css'
 import React, { useEffect, useRef, useState } from 'react'
-import useChat from './useChat'
 import { Button, Input, message, Tag } from 'antd'
+import { useQuery, useMutation } from '@apollo/react-hooks'
+import { MESSAGES_QUERY } from './graphql/query'
+import { CREATE_MESSAGE_MUTATION } from './graphql/mutation'
+import { MESSAGES_SUBSCRIPTION } from './graphql/subscription'
 
-function App() {
-  const { status, opened, messages, sendMessage, clearMessages } = useChat()
-
+function App(props) { 
+  const [confirmedName, setConfirmedName] = useState('')
+  const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [body, setBody] = useState('')
+  const [messages, setMessages] = useState([])
+  const [status, setStatus] = useState({})
+
+  console.log(confirmedName)
+
+  // client.onmessage = (message) => {
+  //   const { data } = message
+  //   const [task, payload] = JSON.parse(data)
+  const { loading, error, subscribeToMore, data } = useQuery(MESSAGES_QUERY, {
+      variables: { name: confirmedName },
+      skip: confirmedName===""
+    })
+  console.log(loading, error, data)
+  const [sendMessage] = useMutation(CREATE_MESSAGE_MUTATION)
+  const clearMessages = 'halo'
+  function handleConfirmedNameSubmit() {
+    setConfirmedName(name)
+    if(error){
+      setStatus({
+        type: "error",
+        msg: error
+      })
+    }
+    if(!loading && !error && data){
+      setMessages(data.message)
+    }
+  }
+
+
+
+  //   switch (task) {
+  //     case 'init': {
+  //       setMessages(() => payload)
+  //       break
+  //     }
+  //     case 'output': {
+  //       setMessages(() => [...messages, payload])
+  //       break
+  //     }
+  //     case 'status': {
+  //       setStatus(payload)
+  //       break
+  //     }
+  //     case 'cleared': {
+  //       setMessages([])
+  //       break
+  //     }
+  //     default:
+  //       break
+  //   }
+  // }
+
+  // client.onopen = () => {
+  //   setOpened(true)
+  // }
+
+  // const sendData = (data) => {
+  //   // TODO
+  //   client.send(JSON.stringify(data))
+  // }
+
+  // const sendMessage = (msg) => {
+  //   // TODO
+  //   sendData(['input', msg])
+  // }
+
+  // const clearMessages = () => {
+  //   // TODO
+  //   sendData(['clear'])
+  // }
+
+  // const { status, opened, messages, sendMessage, clearMessages } = useChat()
 
   const bodyRef = useRef(null)
+
 
   const displayStatus = (s) => {
     if (s.msg) {
@@ -38,59 +114,80 @@ function App() {
     displayStatus(status)
   }, [status])
 
-  return (
-    <div className="App">
-      <div className="App-title">
-        <h1>Simple Chat</h1>
-        <Button type="primary" danger onClick={clearMessages}>
-          Clear
-        </Button>
-      </div>
-      <div className="App-messages">
-        {messages.length === 0 ? (
-          <p style={{ color: '#ccc' }}>
-            {opened? 'No messages...' : 'Loading...'}
-          </p>
-        ) : (
-          messages.map(({ name, body }, i) => (
-            <p className="App-message" key={i}>
-              <Tag color="blue">{name}</Tag> {body}
+  if(confirmedName) return(
+      <div className="App">
+        <div className="App-title">
+          <h1>Simple Chat</h1>
+          <Button type="primary" danger onClick={clearMessages}>
+            Clear
+          </Button>
+        </div>
+        <div className="App-messages">
+          {messages.length === 0 ? (
+            <p style={{ color: '#ccc' }}>
+              {loading?  'Loading...' : 'No messages...'}
             </p>
-          ))
-        )}
+          ) : (
+            messages.map(({ emitter, collector, body }, i) => (
+              <p className="App-message" key={i}>
+                <Tag color="blue">{`{emitter}->{collector}`}</Tag> {body}
+              </p>
+            ))
+          )}
+        </div>
+        <Input
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={{ marginBottom: 10 }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              bodyRef.current.focus()
+            }
+          }}
+        ></Input>
+        <Input.Search
+          rows={4}
+          value={body}
+          ref={bodyRef}
+          enterButton="Send"
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Type a message here..."
+          onSearch={(msg) => {
+            if (!msg || !username) {
+              displayStatus({
+                type: 'error',
+                msg: 'Please enter a username and a message body.'
+              })
+              return
+            }
+  
+            sendMessage({
+              variables: { emitter: confirmedName, collector: username, body: msg }})
+            setBody('')
+          }}
+        ></Input.Search>
       </div>
-      <Input
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        style={{ marginBottom: 10 }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            bodyRef.current.focus()
-          }
-        }}
-      ></Input>
-      <Input.Search
-        rows={4}
-        value={body}
-        ref={bodyRef}
-        enterButton="Send"
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="Type a message here..."
-        onSearch={(msg) => {
-          if (!msg || !username) {
-            displayStatus({
-              type: 'error',
-              msg: 'Please enter a username and a message body.'
-            })
-            return
-          }
-
-          sendMessage({ name: username, body: msg })
-          setBody('')
-        }}
-      ></Input.Search>
-    </div>
+  )
+  else return(
+    <form onSubmit={handleConfirmedNameSubmit}
+          style={{
+                textAlign: "center",
+                height: "100vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+    }}>
+      <input placeholder="your name"
+             type='text'
+             value={name}
+             onChange={e => {
+              e.preventDefault()
+              setName(e.target.value)
+            }}
+      />
+      <input type="submit" value="Submit"/>
+    </form>
   )
 }
 
