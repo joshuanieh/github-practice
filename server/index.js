@@ -97,8 +97,8 @@ db.once('open', () => {
 
   // const PORT = process.env.port || 4000
 
-  graphqlServer.start({ port: process.env.PORT | 4000 }, () => {
-    console.log(`The server is up on port ${process.env.PORT | 4000}!`)
+  graphqlServer.start({ port: process.env.PORT | 5000 }, () => {
+    console.log(`The server is up on port ${process.env.PORT | 5000}!`)
   })
 
   // server.listen(5000, () => {

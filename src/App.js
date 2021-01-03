@@ -1,5 +1,5 @@
 import './App.css'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Input, message, Tag } from 'antd'
 import { useQuery, useMutation } from '@apollo/react-hooks'
 import { MESSAGES_QUERY } from './graphql/query'
@@ -13,7 +13,7 @@ function App(props) {
   const [body, setBody] = useState('')
   const [status, setStatus] = useState({})
 
-  console.log(confirmedName)
+  // console.log(confirmedName)
 
   // client.onmessage = (message) => {
   //   const { data } = message
@@ -22,13 +22,13 @@ function App(props) {
       variables: { name: confirmedName },
       skip: confirmedName===""
     })
-  console.log(loading, error, data)
+  // console.log(loading, error, data)
   const [sendMessage] = useMutation(CREATE_MESSAGE_MUTATION)
   const clearMessages = 'halo'
   function handleConfirmedNameSubmit() {
     setConfirmedName(name)
   }
-  console.log(subscribeToMore)
+  // console.log(subscribeToMore)
   useEffect(()=>{
     subscribeToMore({
       document: MESSAGES_SUBSCRIPTION,
@@ -40,7 +40,7 @@ function App(props) {
           message: [...prev.message, subscriptionData.data.message.data]
         }
       }
-    })}, [subscribeToMore])
+    })}, [subscribeToMore, confirmedName])
   //   switch (task) {
   //     case 'init': {
   //       setMessages(() => payload)
@@ -110,6 +110,18 @@ function App(props) {
     }
   }
 
+  const send = useCallback(
+    () => {
+      if (!body) return
+      sendMessage({
+        variables: {
+          input: { emitter: confirmedName, collector: username, body: body }
+        }
+      })
+      setBody('')
+    }, [sendMessage, confirmedName, username, body]
+  )
+  
   useEffect(() => {
     displayStatus(status)
   }, [status])
@@ -161,9 +173,7 @@ function App(props) {
               })
               return
             }
-  
-            sendMessage({
-              variables: { emitter: confirmedName, collector: username, body: msg }})
+            send()
             setBody('')
           }}
         ></Input.Search>
